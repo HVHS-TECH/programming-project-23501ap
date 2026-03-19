@@ -1,27 +1,14 @@
 
 function setup() {
+console.log("Fly Birds");
+cnv = new createCanvas(1500, 1000);
 
-
-    let cnv;
-let circle;
-class Circle {
-    constructor(x, y, r) {
-        this.x = x;
-        this.y = y;
-        this.r = r;
-    }
-    display() {
-        fill('white');
-        circle(this.x, this.y, this.r * 2);
-    }
-}
-console.log("Hello World");
-cnv = new createCanvas(600, 550);
-
-
+//Birds 
+bird1 = new Sprite(100, 820, 25, 25);
+bird2 = new Sprite(150, 820, 25, 25);
+bird3 = new Sprite(200, 820, 25, 25);
 }
 
 function draw() {
-background('black');
-
+background('skyblue');
 }
