@@ -4,7 +4,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  margin: 0;
+  margin: 10;
   background-color: #f0f0f0;
 }
 
@@ -35,5 +35,5 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #8c70b1;
 }
