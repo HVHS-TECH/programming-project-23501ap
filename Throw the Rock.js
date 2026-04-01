@@ -32,7 +32,7 @@ function preload() {
 
 function setup() {
   createCanvas(1500, 900);
-  world.gravity.y = 2;
+  world.gravity.y = 4;
   setupGame();
 }
 
@@ -184,6 +184,7 @@ function draw() {
 
   if (holding && curRock) {
     let pos = getPullPos();
+
     curRock.position.x = pos.x;
     curRock.position.y = pos.y;
     stroke(80,40,10); strokeWeight(4);
@@ -193,8 +194,8 @@ function draw() {
     drawDots(pos.x, pos.y);
   }
 
-  fill(0); noStroke(); textSize(18);
-  text("Score: " + score, 20, 30);
+  fill(0); noStroke(); textSize(40);
+  text("Score: " + score, 75, 30);
 }
 
 function drawDots(rx, ry) {
@@ -218,6 +219,7 @@ function drawStartScreen() {
   fill(255); textAlign(CENTER); textSize(70); textStyle(BOLD);
   text("FLY BIRDS!", width/2, 240);
   fill(50); textSize(30); textStyle(NORMAL);
+
   text("Hit all 3 red targets to win!", width/2, 350);
   fill(80); textSize(22);
   text("Drag a blue rock back and release to shoot", width/2, 400);
@@ -231,15 +233,19 @@ function drawStartScreen() {
 
 function drawEndScreen() {
   background(30, 30, 60);
+
   fill(255,255,200); noStroke();
   for (let i = 0; i < 60; i++) circle((i*137)%width, (i*97)%500, 3);
   fill(200,50,50); rect(width/2-300, 150, 600, 110, 20);
+
   fill(255); textAlign(CENTER); textSize(65); textStyle(BOLD);
+
   text("GAME OVER", width/2, 230);
   fill(255,200,0); rect(width/2-160, 290, 320, 80, 15);
   fill(30); textSize(36); textStyle(NORMAL);
   text("Score: " + score, width/2, 343);
   let stars = min(score, 3);
+
   textSize(55);
   for (let i = 0; i < 3; i++) {
     fill(i < stars ? color(255,220,0) : color(100));
@@ -247,6 +253,7 @@ function drawEndScreen() {
   }
   fill(60,180,80); rect(restartBtn.x, restartBtn.y, restartBtn.w, restartBtn.h, 15);
   fill(255); textSize(34); textStyle(BOLD);
+
   text("RESTART", width/2, restartBtn.y+52);
   textStyle(NORMAL);
 }
