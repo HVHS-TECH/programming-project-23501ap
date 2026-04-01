@@ -1,135 +1,252 @@
-let imgBG;
-let imgSlingshot;
-let target1, target2, target3;
-let rec1, rec2, rec3, rec4;
-let tnt1;
-let currentRock = null;
-let slingshotX = 210; // center of slingshot image
-let slingshotY = 620; // top of slingshot fork
-let dragging = false;
-let rocks;
-let rockIndex = 0; //  Track which rock is next
+let bg, slingImg;
+let rock1, rock2, rock3;
+let t1, t2, t3;
+let p1, p2, p3, p4, tnt;
+
+let holding = false;
+let curRock = null;
+let rockNum = 0;
+
+let slingX = 210, slingY = 620;
+let forkLX = 178, forkLY = 578;
+let forkRX = 238, forkRY = 572;
+
+let score = 0;
+let h1 = false, h2 = false, h3 = false;
+let gameState = "start";
+let restartBtn = {x:600, y:600, w:300, h:80};
+
+let POWER = 0.16;
+let GRAV = 0.018;
+let MAX_PULL = 120;
+
+let flyX = 0, flyY = 0, flyVX = 0, flyVY = 0, flyT = 0;
+let startX = 0, startY = 0;
+let isShooting = false;
+let flyingRock = null;
 
 function preload() {
-  imgBG = loadImage("../images/FlyBirds.png");
-  imgSlingshot = loadImage("../images/slingshot.png");
+  bg = loadImage("../images/FlyBirds.png");
+  slingImg = loadImage("../images/slingshot.png");
 }
 
 function setup() {
   createCanvas(1500, 900);
- world.gravity.y = 20;
-  rocks = new Group();
-  // Stack rocks near slingshot base (waiting their turn)
-  for (let i = 0; i < 3; i++) {
-    let r = new Sprite(60 + (i * 35), 720, 25, 25);
-    r.color = 'blue';
-    r.collider = 'static'; // static until thrown
-    rocks.add(r);
+  world.gravity.y = 2;
+  setupGame();
+}
+
+function setupGame() {
+  score = 0;
+  rockNum = 0;
+  holding = false;
+  curRock = null;
+  isShooting = false;
+  flyingRock = null;
+  h1 = false; h2 = false; h3 = false;
+
+  let allSprites = [rock1,rock2,rock3,t1,t2,t3,p1,p2,p3,p4,tnt];
+  for (let s of allSprites) { if(s) s.remove(); }
+  t1=null; t2=null; t3=null;
+  p1=null; p2=null; p3=null;
+
+  rock1 = new Sprite(slingX, slingY, 25, 25);
+  rock1.color = "blue";
+  rock1.collider = "static";
+
+  rock2 = new Sprite(95, 780, 25, 25);
+  rock2.color = "blue";
+  rock2.collider = "none";
+
+  rock3 = new Sprite(130, 780, 25, 25);
+  rock3.color = "blue";
+  rock3.collider = "none";
+
+  let x1 = random(850,1100), x2 = random(1050,1300), x3 = random(1250,1450);
+  let y1 = random(120,250),  y2 = random(350,500),   y3 = random(450,650);
+
+  t1 = new Sprite(x1, y1, 40, 40); t1.color = "red"; t1.collider = "static";
+  t2 = new Sprite(x2, y2, 40, 40); t2.color = "red"; t2.collider = "static";
+  t3 = new Sprite(x3, y3, 40, 40); t3.color = "red"; t3.collider = "static";
+
+  p1 = new Sprite(x1, y1+25, 100, 10, "static"); p1.color = "green";
+  p2 = new Sprite(x2, y2+25, 100, 10, "static"); p2.color = "green";
+  p3 = new Sprite(x3, y3+25, 100, 10, "static"); p3.color = "green";
+
+
+
+}
+
+function getPullPos() {
+  let d = dist(mouseX, mouseY, slingX, slingY);
+  if (d > MAX_PULL) {
+    let a = atan2(mouseY-slingY, mouseX-slingX);
+    return { x: slingX+cos(a)*MAX_PULL, y: slingY+sin(a)*MAX_PULL };
   }
-
-  // Move first rock to slingshot position ready to throw
-  rocks[0].position.x = slingshotX;
-  rocks[0].position.y = slingshotY;
-
-  target1 = new Sprite(900, 150, 40, 40);
-  target1.color = 'red';
-  target1.collider = 'static';
-  target2 = new Sprite(1080, 420, 40, 40);
-  target2.color = 'red';
-  target2.collider = 'static';
-  target3 = new Sprite(1400, 500, 40, 40);
-  target3.color = 'red';
-  target3.collider = 'static';
-
-  rec1 = new Sprite(900, 170, 100, 10, 'static');
-  rec1.color = 'green';
-  rec1.collider = 'static';
-  rec2 = new Sprite(1080, 440, 100, 10, 'static');
-  rec2.color = 'green';
-  rec2.collider = 'static';
-  rec3 = new Sprite(1400, 520, 100, 10, 'static');
-  rec3.color = 'green';
-  rec3.collider = 'static';
-  rec4 = new Sprite(1000, 620, 350, 15, 'static');
-  rec4.color = 'green';
-  rec4.collider = 'static';
-  rec4.rotation = 80;
-
-  tnt1 = new Sprite(1250, 400, 30, 30);
-  tnt1.color = 'black';
+  return { x: mouseX, y: mouseY };
 }
 
 function mousePressed() {
-  // Only grab the rock that's sitting at the slingshot
-  if (rockIndex < rocks.length) {
-    currentRock = rocks[rockIndex];
-    dragging = true;
-    currentRock.collider = 'dynamic'; // keep static while dragging
-    currentRock.velocity.x = 0;
-    currentRock.velocity.y = 0;
+  if (gameState == "start") { gameState = "playing"; return; }
+
+  if (gameState == "end") {
+    let b = restartBtn;
+    if (mouseX>b.x && mouseX<b.x+b.w && mouseY>b.y && mouseY<b.y+b.h) {
+      setupGame();
+      gameState = "playing";
+    }
+    return;
+  }
+
+  if (isShooting) return;
+
+  let r = [rock1, rock2, rock3][rockNum];
+  if (r && dist(mouseX, mouseY, r.position.x, r.position.y) < 50) {
+    curRock = r;
+    holding = true;
+    curRock.collider = "static";
+    curRock.velocity.x = 0;
+    curRock.velocity.y = 0;
   }
 }
 
 function mouseReleased() {
-  if (currentRock && dragging) {
-    dragging = false;
+  if (gameState != "playing" || !holding || !curRock) return;
+  holding = false;
 
-    //Switch to dynamic BEFORE applying velocity so physics kicks in
-    currentRock.collider = 'dynamic';
+  let pos = getPullPos();
+  startX = pos.x; startY = pos.y;
+  flyX = startX; flyY = startY;
+  flyVX = (slingX - pos.x) * POWER;
+  flyVY = (slingY - pos.y) * POWER;
+  flyT = 0;
+  isShooting = true;
+  flyingRock = curRock;
+  flyingRock.collider = "none";
+  curRock = null;
+  rockNum++;
 
-    let dx = slingshotX - mouseX;
-    let dy = slingshotY - mouseY;
-    currentRock.velocity.x = dx * 0.15;
-    currentRock.velocity.y = dy * 0.15;
+  if (rockNum == 1) setTimeout(() => {
+    if(rock2) { rock2.position.x=slingX; rock2.position.y=slingY; rock2.collider="static"; }
+  }, 600);
 
-    rockIndex++; // Move to next rock
+  if (rockNum == 2) setTimeout(() => {
+    if(rock3) { rock3.position.x=slingX; rock3.position.y=slingY; rock3.collider="static"; }
+  }, 600);
+}
 
-    // Move next rock to slingshot position (if one exists)
-    if (rockIndex < rocks.length) {
-      rocks[rockIndex].position.x = slingshotX;
-      rocks[rockIndex].position.y = slingshotY;
-    }
+function updateFlyRock() {
+  if (!isShooting || !flyingRock) return;
+  flyT++;
 
-    currentRock = null; //  Clear current rock reference
+  let px = flyX, py = flyY;
+  flyX = startX + flyVX * flyT;
+  flyY = startY + flyVY * flyT + 0.5 * GRAV * flyT * flyT;
+  flyingRock.position.x = flyX;
+  flyingRock.position.y = flyY;
+
+  for (let s = 0; s <= 8; s++) {
+    checkHit(lerp(px, flyX, s/8), lerp(py, flyY, s/8));
   }
+
+  if (flyX > width || flyY > height || flyX < 0) {
+    isShooting = false;
+    flyingRock = null;
+    if (rockNum >= 3) setTimeout(() => { gameState = "end"; }, 1500);
+  }
+}
+
+function hitTarget(t, p) {
+  t.collider = "dynamic";
+  t.color = color(255, 120, 0);
+  t.velocity.x = 3;
+  t.velocity.y = -4;
+  if (p) { p.collider = "dynamic"; p.velocity.y = -2; }
+  score++;
+  if (h1 && h2 && h3) setTimeout(() => { gameState = "end"; }, 1500);
+}
+
+function checkHit(rx, ry) {
+  if (!h1 && t1 && dist(rx,ry,t1.position.x,t1.position.y) < 42) { h1=true; hitTarget(t1,p1); }
+  if (!h2 && t2 && dist(rx,ry,t2.position.x,t2.position.y) < 42) { h2=true; hitTarget(t2,p2); }
+  if (!h3 && t3 && dist(rx,ry,t3.position.x,t3.position.y) < 42) { h3=true; hitTarget(t3,p3); }
 }
 
 function draw() {
   background(200);
+  if (gameState == "start") { drawStartScreen(); return; }
+  if (gameState == "end")   { drawEndScreen();   return; }
 
-  // Draw images once only
-  if (imgBG) {
-    image(imgBG, 0, 0, width, height);
-  }
-  if (imgSlingshot) {
-    image(imgSlingshot, 100, height - 330, 220, 220);
-  }
+  image(bg, 0, 0, width, height);
+  image(slingImg, 100, height-330, 220, 220);
 
-  // Drag rock with mouse (no mouseIsPressed conflict in draw)
-  if (dragging && currentRock) {
-    currentRock.position.x = mouseX;
-    currentRock.position.y = mouseY;
-  }
+  updateFlyRock();
 
-  // Draw slingshot rubber band visual
-  if (dragging && currentRock) {
-    stroke(100, 60, 0);
-    strokeWeight(3);
-    let p = currentRock.position;
-    line(slingshotX - 20, slingshotY, currentRock.position.x, currentRock.position.y);
-    line(slingshotX + 20, slingshotY, currentRock.position.x, currentRock.position.y);
+  if (holding && curRock) {
+    let pos = getPullPos();
+    curRock.position.x = pos.x;
+    curRock.position.y = pos.y;
+    stroke(80,40,10); strokeWeight(4);
+    line(forkLX, forkLY, pos.x, pos.y);
+    line(forkRX, forkRY, pos.x, pos.y);
     noStroke();
+    drawDots(pos.x, pos.y);
   }
 
-  // TNT collision check
-  if (tnt1 && rocks.collides(tnt1)) {
-    explodeTNT(tnt1);
-    tnt1 = null; // Prevent repeated calls after removal
+  fill(0); noStroke(); textSize(18);
+  text("Score: " + score, 20, 30);
+}
+
+function drawDots(rx, ry) {
+  let vx = (slingX-rx)*POWER;
+  let vy = (slingY-ry)*POWER;
+  noStroke();
+  for (let i = 1; i <= 500; i++) {
+    let dx = rx + vx*i;
+    let dy = ry + vy*i + 0.5*GRAV*i*i;
+    if (dx>width || dy>height || dx<0) break;
+    fill(255, 240, 60, 200);
+    circle(dx, dy, 5);
   }
 }
 
-function explodeTNT(sprite) {
-  sprite.remove();
-  console.log("TNT Exploded!");
-  tnt1.collider = 'static';
+function drawStartScreen() {
+  background(135, 206, 235);
+  fill(255,220,0); noStroke(); circle(1300, 120, 140);
+  fill(80,160,60); rect(0, 800, width, 100);
+  fill(255,140,0); rect(width/2-320, 150, 640, 120, 20);
+  fill(255); textAlign(CENTER); textSize(70); textStyle(BOLD);
+  text("FLY BIRDS!", width/2, 240);
+  fill(50); textSize(30); textStyle(NORMAL);
+  text("Hit all 3 red targets to win!", width/2, 350);
+  fill(80); textSize(22);
+  text("Drag a blue rock back and release to shoot", width/2, 400);
+  if (frameCount % 60 < 40) {
+    fill(255,60,60); rect(width/2-200, 490, 400, 90, 15);
+    fill(255); textSize(38); textStyle(BOLD);
+    text("CLICK TO PLAY!", width/2, 549);
+  }
+  textStyle(NORMAL);
+}
+
+function drawEndScreen() {
+  background(30, 30, 60);
+  fill(255,255,200); noStroke();
+  for (let i = 0; i < 60; i++) circle((i*137)%width, (i*97)%500, 3);
+  fill(200,50,50); rect(width/2-300, 150, 600, 110, 20);
+  fill(255); textAlign(CENTER); textSize(65); textStyle(BOLD);
+  text("GAME OVER", width/2, 230);
+  fill(255,200,0); rect(width/2-160, 290, 320, 80, 15);
+  fill(30); textSize(36); textStyle(NORMAL);
+  text("Score: " + score, width/2, 343);
+  let stars = min(score, 3);
+  textSize(55);
+  for (let i = 0; i < 3; i++) {
+    fill(i < stars ? color(255,220,0) : color(100));
+    text("★", width/2-70+i*70, 440);
+  }
+  fill(60,180,80); rect(restartBtn.x, restartBtn.y, restartBtn.w, restartBtn.h, 15);
+  fill(255); textSize(34); textStyle(BOLD);
+  text("RESTART", width/2, restartBtn.y+52);
+  textStyle(NORMAL);
 }
