@@ -1,7 +1,7 @@
 let bg, slingImg;
-let rock1, rock2, rock3;
-let t1, t2, t3;
-let p1, p2, p3, p4, tnt;
+let rock1, rock2, rock3;//rocks 
+let t1, t2, t3;//targets
+let p1, p2, p3, p4, tnt;//platform that targets on//
 
 let holding = false;
 let curRock = null;
@@ -11,7 +11,7 @@ let slingX = 210, slingY = 620;
 let forkLX = 178, forkLY = 578;
 let forkRX = 238, forkRY = 572;
 
-let score = 0;
+let score = 0;//score point 
 let h1 = false, h2 = false, h3 = false;
 let gameState = "start";
 let restartBtn = {x:600, y:600, w:300, h:80};
@@ -25,17 +25,20 @@ let startX = 0, startY = 0;
 let isShooting = false;
 let flyingRock = null;
 
+// Preload the Images //
 function preload() {
   bg = loadImage("../images/FlyBirds.png");
   slingImg = loadImage("../images/slingshot.png");
 }
 
+// Canvas//
 function setup() {
   createCanvas(1500, 900);
   world.gravity.y = 4;
   setupGame();
 }
 
+//Game setup to the rocks and the blocks, all sprites in position //
 function setupGame() {
   score = 0;
   rockNum = 0;
@@ -50,42 +53,43 @@ function setupGame() {
   t1=null; t2=null; t3=null;
   p1=null; p2=null; p3=null;
 
-  rock1 = new Sprite(slingX, slingY, 25, 25);
+  rock1 = new Sprite(slingX, slingY, 25, 25);// rocks1 position
   rock1.color = "blue";
   rock1.collider = "static";
 
-  rock2 = new Sprite(95, 780, 25, 25);
+  rock2 = new Sprite(95, 780, 25, 25);// rocks2 position
   rock2.color = "blue";
   rock2.collider = "none";
 
-  rock3 = new Sprite(130, 780, 25, 25);
+  rock3 = new Sprite(130, 780, 25, 25);// rocks1 position
   rock3.color = "blue";
   rock3.collider = "none";
 
-  let x1 = random(850,1100), x2 = random(1050,1300), x3 = random(1250,1450);
+  let x1 = random(850,1100), x2 = random(1050,1300), x3 = random(1250,1450);// Random position every time when restart
   let y1 = random(120,250),  y2 = random(350,500),   y3 = random(450,650);
 
-  t1 = new Sprite(x1, y1, 40, 40); t1.color = "red"; t1.collider = "static";
+  t1 = new Sprite(x1, y1, 40, 40); t1.color = "red"; t1.collider = "static";//targets 
   t2 = new Sprite(x2, y2, 40, 40); t2.color = "red"; t2.collider = "static";
   t3 = new Sprite(x3, y3, 40, 40); t3.color = "red"; t3.collider = "static";
 
-  p1 = new Sprite(x1, y1+25, 100, 10, "static"); p1.color = "green";
+  p1 = new Sprite(x1, y1+25, 100, 10, "static"); p1.color = "green";// platforms for the targets
   p2 = new Sprite(x2, y2+25, 100, 10, "static"); p2.color = "green";
   p3 = new Sprite(x3, y3+25, 100, 10, "static"); p3.color = "green";
 
 
 
 }
-
+// Slingshot pull mechanisam //
 function getPullPos() {
   let d = dist(mouseX, mouseY, slingX, slingY);
   if (d > MAX_PULL) {
     let a = atan2(mouseY-slingY, mouseX-slingX);
     return { x: slingX+cos(a)*MAX_PULL, y: slingY+sin(a)*MAX_PULL };
   }
-  return { x: mouseX, y: mouseY };
+  return { x: mouseX, y: mouseY };//return to normal after throw a rock 
 }
 
+//When hit start button game start,  when mouse pressed //
 function mousePressed() {
   if (gameState == "start") { gameState = "playing"; return; }
 
@@ -109,7 +113,7 @@ function mousePressed() {
     curRock.velocity.y = 0;
   }
 }
-
+//When mouseresealed while pulling the rocks the rock will get thrown (also add time delay to fix a bug )//
 function mouseReleased() {
   if (gameState != "playing" || !holding || !curRock) return;
   holding = false;
@@ -127,14 +131,14 @@ function mouseReleased() {
   rockNum++;
 
   if (rockNum == 1) setTimeout(() => {
-    if(rock2) { rock2.position.x=slingX; rock2.position.y=slingY; rock2.collider="static"; }
+    if(rock2) { rock2.position.x=slingX; rock2.position.y=slingY; rock2.collider="static"; }// add delay prevent a bug
   }, 600);
 
   if (rockNum == 2) setTimeout(() => {
     if(rock3) { rock3.position.x=slingX; rock3.position.y=slingY; rock3.collider="static"; }
   }, 600);
 }
-
+//This update Flying rock  from glicthing//
 function updateFlyRock() {
   if (!isShooting || !flyingRock) return;
   flyT++;
@@ -155,7 +159,7 @@ function updateFlyRock() {
     if (rockNum >= 3) setTimeout(() => { gameState = "end"; }, 1500);
   }
 }
-
+//When hit the target it goes to dynamic so it will fall//
 function hitTarget(t, p) {
   t.collider = "dynamic";
   t.color = color(255, 120, 0);
@@ -165,13 +169,13 @@ function hitTarget(t, p) {
   score++;
   if (h1 && h2 && h3) setTimeout(() => { gameState = "end"; }, 1500);
 }
-
+// this chck when it got hit by a rock
 function checkHit(rx, ry) {
   if (!h1 && t1 && dist(rx,ry,t1.position.x,t1.position.y) < 42) { h1=true; hitTarget(t1,p1); }
   if (!h2 && t2 && dist(rx,ry,t2.position.x,t2.position.y) < 42) { h2=true; hitTarget(t2,p2); }
   if (!h3 && t3 && dist(rx,ry,t3.position.x,t3.position.y) < 42) { h3=true; hitTarget(t3,p3); }
 }
-
+// Draw the star screen at the first and end screen at end of each game //
 function draw() {
   background(200);
   if (gameState == "start") { drawStartScreen(); return; }
@@ -183,7 +187,7 @@ function draw() {
   updateFlyRock();
 
   if (holding && curRock) {
-    let pos = getPullPos();
+    let pos = getPullPos();//pull by mouse
 
     curRock.position.x = pos.x;
     curRock.position.y = pos.y;
@@ -197,7 +201,7 @@ function draw() {
   fill(0); noStroke(); textSize(40);
   text("Score: " + score, 75, 30);
 }
-
+// THis function is basically to draw the dotline where the rock getting thrown//
 function drawDots(rx, ry) {
   let vx = (slingX-rx)*POWER;
   let vy = (slingY-ry)*POWER;
@@ -210,7 +214,7 @@ function drawDots(rx, ry) {
     circle(dx, dy, 5);
   }
 }
-
+// Start background before game 
 function drawStartScreen() {
   background(135, 206, 235);
   fill(255,220,0); noStroke(); circle(1300, 120, 140);
@@ -230,7 +234,7 @@ function drawStartScreen() {
   }
   textStyle(NORMAL);
 }
-
+// End screen after game
 function drawEndScreen() {
   background(30, 30, 60);
 
@@ -240,13 +244,13 @@ function drawEndScreen() {
 
   fill(255); textAlign(CENTER); textSize(65); textStyle(BOLD);
 
-  text("GAME OVER", width/2, 230);
+  text("GAME OVER", width/2, 230);// when all targets get hit or if u lose all your rocks it show game over and it show the your score there
   fill(255,200,0); rect(width/2-160, 290, 320, 80, 15);
   fill(30); textSize(36); textStyle(NORMAL);
   text("Score: " + score, width/2, 343);
   let stars = min(score, 3);
 
-  textSize(55);
+  textSize(55);// text size and color
   for (let i = 0; i < 3; i++) {
     fill(i < stars ? color(255,220,0) : color(100));
     text("★", width/2-70+i*70, 440);
@@ -254,6 +258,6 @@ function drawEndScreen() {
   fill(60,180,80); rect(restartBtn.x, restartBtn.y, restartBtn.w, restartBtn.h, 15);
   fill(255); textSize(34); textStyle(BOLD);
 
-  text("RESTART", width/2, restartBtn.y+52);
+  text("RESTART", width/2, restartBtn.y+52);// restart button  (restart the game)
   textStyle(NORMAL);
 }
